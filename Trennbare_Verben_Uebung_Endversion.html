@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trennbare Verben Übung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .sentence {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .word {
+            display: inline-block;
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            cursor: grab;
+            background-color: #f9f9f9;
+        }
+        .word.correct {
+            background-color: #d4edda;
+            color: #155724;
+            border-color: #c3e6cb;
+        }
+        .word.incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-color: #f5c6cb;
+        }
+        .check-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            order: 100; /* Button bleibt immer unten */
+        }
+        .check-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Trennbare Verben - Satzbau Übung</h1>
+    <div id="exercise"></div>
+
+    <script>
+        const sentences = [
+            { original: ["Ich", "stehe", "um", "7", "Uhr", "auf"], correct: "Ich stehe um 7 Uhr auf" },
+            { original: ["Wir", "kaufen", "im", "Supermarkt", "ein"], correct: "Wir kaufen im Supermarkt ein" },
+            { original: ["Der", "Kurs", "fängt", "um", "9", "Uhr", "an"], correct: "Der Kurs fängt um 9 Uhr an" },
+            { original: ["Ich", "hole", "die", "Kinder", "um", "16", "Uhr", "ab"], correct: "Ich hole die Kinder um 16 Uhr ab" },
+            { original: ["Abends", "sehe", "ich", "fern"], correct: "Abends sehe ich fern" }
+        ];
+
+        const exerciseContainer = document.getElementById("exercise");
+
+        sentences.forEach((sentence, index) => {
+            const sentenceDiv = document.createElement("div");
+            sentenceDiv.classList.add("sentence");
+            sentenceDiv.id = `sentence-${index}`;
+
+            const shuffledWords = sentence.original.sort(() => Math.random() - 0.5);
+
+            shuffledWords.forEach(word => {
+                const wordDiv = document.createElement("div");
+                wordDiv.classList.add("word");
+                wordDiv.textContent = word;
+                wordDiv.draggable = true;
+
+                wordDiv.addEventListener("dragstart", (event) => {
+                    event.dataTransfer.setData("text/plain", event.target.id);
+                });
+
+                wordDiv.id = `word-${word}-${Math.random().toString(36).substr(2, 9)}`;
+
+                sentenceDiv.appendChild(wordDiv);
+            });
+
+            const checkButton = document.createElement("button");
+            checkButton.textContent = "Prüfen";
+            checkButton.classList.add("check-button");
+            checkButton.addEventListener("click", () => checkSentence(sentenceDiv, sentence.correct));
+
+            sentenceDiv.appendChild(checkButton);
+            exerciseContainer.appendChild(sentenceDiv);
+
+            sentenceDiv.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                const afterElement = getDragAfterElement(sentenceDiv, event.clientX);
+                const draggingElement = document.querySelector(".dragging");
+                if (afterElement == null) {
+                    sentenceDiv.appendChild(draggingElement);
+                } else {
+                    sentenceDiv.insertBefore(draggingElement, afterElement);
+                }
+            });
+
+            sentenceDiv.addEventListener("drop", (event) => {
+                event.preventDefault();
+                const draggingElement = document.querySelector(".dragging");
+                draggingElement.classList.remove("dragging");
+            });
+        });
+
+        document.addEventListener("dragstart", (event) => {
+            event.target.classList.add("dragging");
+        });
+
+        document.addEventListener("dragend", (event) => {
+            event.target.classList.remove("dragging");
+        });
+
+        function checkSentence(sentenceDiv, correctSentence) {
+            const currentWords = Array.from(sentenceDiv.querySelectorAll(".word"))
+                .map(wordDiv => wordDiv.textContent)
+                .join(" ");
+
+            const wordDivs = sentenceDiv.querySelectorAll(".word");
+            wordDivs.forEach(wordDiv => wordDiv.classList.remove("correct", "incorrect"));
+
+            if (currentWords === correctSentence) {
+                wordDivs.forEach(wordDiv => wordDiv.classList.add("correct"));
+            } else {
+                wordDivs.forEach(wordDiv => wordDiv.classList.add("incorrect"));
+            }
+        }
+
+        function getDragAfterElement(container, x) {
+            const draggableElements = [...container.querySelectorAll(".word:not(.dragging)")];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = x - box.left - box.width / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+    </script>
+</body>
+</html>
